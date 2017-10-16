@@ -1,0 +1,2 @@
+curl -XPOST https://api.twilio.com/2010-04-01/Accounts/AC8f651995d0179ece84ad513473cf29e7/Messages.json -d "Body=Hello%20Carlos" -d "To=%2B37256861665" -d "MessagingServiceSid=MGfe6dec57c72164b0b5a4397ba24e091e" -u 'AC8f651995d0179ece84ad513473cf29e7:4b16bb8bb5243c0b68d5e9d48c6a8d02'
+

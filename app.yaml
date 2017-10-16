@@ -1,0 +1,88 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: salemove-thirdparty
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: salemove-thirdparty
+spec:
+  ports:
+  - name: pgql
+    port: 5432
+    targetPort: 5432
+    protocol: TCP
+  selector:
+    app: postgres
+---
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: postgres
+  namespace: salemove-thirdparty
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:9.6
+          env:
+            - name: POSTGRES_USER
+              value: kong
+            - name: POSTGRES_PASSWORD
+              value: kong
+            - name: POSTGRES_DB
+              value: kong
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: pg-data
+      volumes:
+        - name: pg-data
+          emptyDir: {}
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: abix
+  namespace: salemove-thirdparty
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: abix
+    spec:
+      containers:
+      - name: abix
+        image: carlospaniagua/abix
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 4000
+      imagePullSecrets:
+        - name: regsecret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: abix
+  namespace: salemove-thirdparty
+spec:
+  ports:
+    - port: 4000
+      targetPort: 4000
+      protocol: TCP
+      nodePort: 31223
+      name: http
+  selector:
+    app: abix
+  type: NodePort
