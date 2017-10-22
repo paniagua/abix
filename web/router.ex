@@ -19,26 +19,39 @@ defmodule Abix.Router do
     get "/", PageController, :index
   end
 
-  scope "/api/v1", Abix do
-    pipe_through :api
-    get "/requests", RequestController, :index
-    post "/requests", RequestController, :create
-    get "/requests/:id", RequestController, :show
-
-  end
-
   scope "/salemove", Abix do
     pipe_through :api
-    post "/", RequestController, :salemove_callback
+    # scope "/twilio", Abix do
+    #   post "/chat_message", ChannelController, :send_sms
+    # end
+    post "/sms", ChannelController, :send_sms
     post "/chat_message", RequestController, :chat_message
+
+    # scope "/curl", Abix do
+    #   post "/chat_message", RequestController, :chat_message
+    # end
+
+    # scope "/facebook", Abix do
+    #   post "/chat_message", RequestController, :chat_message
+    # end
+    post "/facebook", RequestController, :chat_message
+
     post "/end_engagement", RequestController, :end_engagement
+    post "/start_engagement", RequestController, :start_engagement
   end
 
-  scope "/integration", Abix do
+  scope "/facebook", Abix do
+    get "/webhook", FacebookController, :verify_token
+    post "/webhook", FacebookController, :message_to_operator
+  end
+
+  scope "/curl", Abix do
+    post "/message", CurlController, :message_to_operator
+  end
+
+  scope "/twilio", Abix do
     pipe_through :api
-    post "/fb", RequestController, :fb_integration
-    post "/curl", RequestController, :curl_integration
-    post "/twilio", RequestController, :twilio_integration
-    post "/twilio/status", RequestController, :status
+    post "/message", TwilioController, :message_to_operator
+    post "/status", TwilioController, :status
   end
 end

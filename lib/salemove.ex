@@ -15,11 +15,11 @@ defmodule Abix.SaleMove do
     }).body["operators"]
       |> Enum.filter(fn operator -> operator["available"] == true end)
       |> Enum.at(0)
-      |> (fn operator -> operator["id"] end).()
   end
 
   # Move this to a structure
-  defp request_params(operator_id) do
+  defp request_params(operator_id, channel_type) do
+    Logger.info "https://abix.at.samo.io/salemove" <> channel_type
     %{
       operator_id: operator_id,
       media: "text",
@@ -27,37 +27,55 @@ defmodule Abix.SaleMove do
         site_id: "",
         name: "Elixir Visitor"
       },
-      webhooks: [%{
-        url: "https://abix.at.samo.io/salemove",
-        method: :POST,
-        events: [
-          "engagement.request.failure",
-          "engagement.start",
-          "engagement.transfer",
-          "engagement.end",
-          "engagement.chat.message",
-          "engagement.chat.message_status"
-        ]
-      }]
+      webhooks: [
+        %{
+          url: "https://04383d53.ngrok.io/salemove/start_engagement",
+          method: :POST,
+          events: ["engagement.start"]
+        },
+        %{
+          url: "https://04383d53.ngrok.io/salemove/" <> channel_type,
+          method: :POST,
+          events: ["engagement.chat.message"]
+        },
+        %{
+          url: "https://04383d53.ngrok.io/salemove/end_engagement",
+          method: :POST,
+          events: ["engagement.end"]
+        }
+      ]
     }
   end
 
-  def request_engagement(site_id, sender_id, message) do
-    site_id
-      |> find_operator
-      |> request_params
-      |> (fn params ->
-            %{params | new_site_visitor: %{site_id: site_id, name: "Demo" }}
-          end).()
-      |> (fn params -> post("/engagement_requests", params,
-                        headers: %{
-                          "Authorization" => "Token BczJeWiGePA7tRxaOrkHnA",
-                          "Accept" => "application/vnd.salemove.v1+json"
-                        }).body end).()
-      |> build_request
+  def save_request(engagement_request, sender_id, message) do
+    engagement_request |> build_request
       |> (fn request -> %{request | sender_id: sender_id} end).()
       |> (fn request -> %{request | message: message} end).()
       |> Abix.Repo.insert
+  end
+
+  defp send_engagement_request(params) do
+    post("/engagement_requests", params,
+      headers: %{
+        "Authorization" => "Token BczJeWiGePA7tRxaOrkHnA",
+        "Accept" => "application/vnd.salemove.v1+json"
+      }).body
+  end
+
+  def request_engagement(site_id, channel_type) do
+    request_parameters = site_id
+      |> find_operator
+      |> (fn operator ->
+            request_params(operator["id"], channel_type)
+          end).()
+    # request_parameters
+      |> (fn params ->
+            %{params | new_site_visitor: %{
+                          site_id: site_id,
+                          name: "Demo"
+                        }}
+          end).()
+      |> send_engagement_request
   end
 
   defp build_request(request_response) do
