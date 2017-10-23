@@ -34,7 +34,7 @@ defmodule Abix.Router do
     # scope "/facebook", Abix do
     #   post "/chat_message", RequestController, :chat_message
     # end
-    post "/facebook", RequestController, :chat_message
+    post "/facebook", ChannelController, :send_facebook_message
 
     post "/end_engagement", RequestController, :end_engagement
     post "/start_engagement", RequestController, :start_engagement

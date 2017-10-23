@@ -4,12 +4,13 @@ defmodule Abix.FacebookController do
   require Logger
   require IEx;
 
-  # plug :find_configuration
+  plug :find_configuration
 
   def find_configuration(conn, _) do
-    Logger.info conn.params["entry"]["id"]
-    page_id = conn.params["entry"]["id"]
-    conf = Abix.FaceBook.get_conf(page_id)
+    entry = conn.params["entry"]
+      |> Enum.at(0)
+    entry["id"]
+    conf = Abix.Facebook.get_conf(entry["id"])
     assign(conn, :conf, conf)
   end
 
@@ -21,7 +22,9 @@ defmodule Abix.FacebookController do
           end).()
       |> Enum.at(0)
       |> (fn message_entry ->
-          send_message(message_entry, conn.assigns(:conf))
+            if message_entry["message"] != nil do
+              send_message(message_entry, conn.assigns[:conf])
+            end
           end).()
     json conn, %{success: :true}
   end
@@ -42,6 +45,7 @@ defmodule Abix.FacebookController do
   def send_message(message_entry, conf) do
     sender_id = message_entry["sender"]["id"]
     message = message_entry["message"]["text"]
+
     if Abix.SaleMove.has_ongoing_engagement?(sender_id) do
       Logger.info "Has engagement going on"
       Abix.SaleMove.send_message(sender_id, message)

@@ -19,7 +19,6 @@ defmodule Abix.SaleMove do
 
   # Move this to a structure
   defp request_params(operator_id, channel_type) do
-    Logger.info "https://abix.at.samo.io/salemove" <> channel_type
     %{
       operator_id: operator_id,
       media: "text",
@@ -176,10 +175,17 @@ defmodule Abix.SaleMove do
       |> (fn request -> request.sender_id end).()
   end
 
+  def find_site_by_engagement_id(id) do
+      id
+      |> find_engagement_by_id
+      |> (fn engagement -> engagement.site_id end).()
+  end
+
   def find_engagement_by_id(id) do
     query = from u in Abix.Engagement,
       where: u.engagement_id == ^id,
-      select: struct(u, [:engagement_id, :operator_id, :sub_engagement_id, :ended, :engagement_request_id])
+      # select: struct(u, [:engagement_id, :operator_id, :sub_engagement_id, :ended, :engagement_request_id, :site_id])
+      select: u
     Abix.Repo.all(query) |> Enum.at(0)
   end
 

@@ -1,0 +1,22 @@
+%{
+  "AccountSid" => "AC99f61730d7447bea5975fdb9eb7ffae8",
+  "ApiVersion" => "2010-04-01",
+  "Body" => "T",
+  "From" => "+37256861665",
+  "FromCity" => "",
+  "FromCountry" => "EE",
+  "FromState" => "",
+  "FromZip" => "",
+  "MessageSid" => "SMaaebda0f7541d3b6b0f31cd08e74a0c2",
+  "MessagingServiceSid" => "MGcc72f5b902bcfe64ddb94c993f22c47a",
+  "NumMedia" => "0",
+  "NumSegments" => "1",
+  "SmsMessageSid" => "SMaaebda0f7541d3b6b0f31cd08e74a0c2",
+  "SmsSid" => "SMaaebda0f7541d3b6b0f31cd08e74a0c2",
+  "SmsStatus" => "received",
+  "To" => "+37258821954",
+  "ToCity" => "",
+  "ToCountry" => "EE",
+  "ToState" => "",
+  "ToZip" => ""
+}

@@ -4,9 +4,6 @@ defmodule Abix.ChannelController do
   require Logger
   require IEx;
 
-  # plug Tesla.Middleware.BaseUrl, "https://api.twilio.com/2010-04-01/Accounts"
-
-
   plug :find_sender
   plug :find_message
   plug :find_site_id
@@ -23,7 +20,9 @@ defmodule Abix.ChannelController do
   end
 
   def find_site_id(conn, _) do
-    assign(conn, :site_id, "17f2e072-3802-47b0-84b5-25eb00d791cd")
+    site_id = conn.params["message"]["engagement_id"]
+          |> Abix.SaleMove.find_site_by_engagement_id
+    assign(conn, :site_id, site_id)
   end
 
   def send_sms(conn, params) do
