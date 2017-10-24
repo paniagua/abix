@@ -21,19 +21,10 @@ defmodule Abix.Router do
 
   scope "/salemove", Abix do
     pipe_through :api
-    # scope "/twilio", Abix do
-    #   post "/chat_message", ChannelController, :send_sms
-    # end
+
     post "/sms", ChannelController, :send_sms
     post "/chat_message", RequestController, :chat_message
 
-    # scope "/curl", Abix do
-    #   post "/chat_message", RequestController, :chat_message
-    # end
-
-    # scope "/facebook", Abix do
-    #   post "/chat_message", RequestController, :chat_message
-    # end
     post "/facebook", ChannelController, :send_facebook_message
 
     post "/end_engagement", RequestController, :end_engagement

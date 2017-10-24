@@ -1,0 +1,21 @@
+curl --request POST \
+    --header "Authorization: Token $token" \
+    --header 'Accept: application/vnd.salemove.v1+json' \
+    --header 'Content-Type: application/json' \
+    --data-binary '{
+      "operator_id": "387b316c-a5c9-40b7-9932-448e4260e99e",
+      "new_site_visitor": {
+        "site_id": "17f2e072-3802-47b0-84b5-25eb00d791cd",
+        "name": "Visitor Name"
+      },
+      "media": "text",
+      "webhooks": [
+        {
+          "url": "https://some.ngrok.io/salemove/events/engagement_start",
+          "method": "POST",
+          "headers": {"header_name": "header_value"},
+          "events": ["engagement.start"]
+        }
+      ]
+    }' \
+  'https://api.beta.salemove.com/engagement_requests'

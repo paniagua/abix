@@ -4,13 +4,14 @@ defmodule Abix.SaleMove do
   require IEx;
   use Tesla
 
-  plug Tesla.Middleware.BaseUrl, "https://api.beta.salemove.com"
   plug Tesla.Middleware.JSON
 
   def find_operator(site_id) do
-    get("/operators?include_offline=false&site_ids[]=#{site_id}",
+    conf = site_id |> get_site_configuration
+    url = conf.endpoint <> "/operators?include_offline=false&site_ids[]=#{site_id}"
+    get(url,
       headers: %{
-        "Authorization" => "Token BczJeWiGePA7tRxaOrkHnA",
+        "Authorization" => "Token " <> conf.app_token,
         "Accept" => "application/vnd.salemove.v1+json"
     }).body["operators"]
       |> Enum.filter(fn operator -> operator["available"] == true end)
@@ -18,7 +19,7 @@ defmodule Abix.SaleMove do
   end
 
   # Move this to a structure
-  defp request_params(operator_id, channel_type) do
+  defp request_params(operator_id, webhook_base_url, channel_type) do
     %{
       operator_id: operator_id,
       media: "text",
@@ -28,17 +29,17 @@ defmodule Abix.SaleMove do
       },
       webhooks: [
         %{
-          url: "https://04383d53.ngrok.io/salemove/start_engagement",
+          url: webhook_base_url <> "/salemove/start_engagement",
           method: :POST,
           events: ["engagement.start"]
         },
         %{
-          url: "https://04383d53.ngrok.io/salemove/" <> channel_type,
+          url: webhook_base_url <>  "/salemove/" <> channel_type,
           method: :POST,
           events: ["engagement.chat.message"]
         },
         %{
-          url: "https://04383d53.ngrok.io/salemove/end_engagement",
+          url: webhook_base_url <> "/salemove/end_engagement",
           method: :POST,
           events: ["engagement.end"]
         }
@@ -53,19 +54,13 @@ defmodule Abix.SaleMove do
       |> Abix.Repo.insert
   end
 
-  defp send_engagement_request(params) do
-    post("/engagement_requests", params,
-      headers: %{
-        "Authorization" => "Token BczJeWiGePA7tRxaOrkHnA",
-        "Accept" => "application/vnd.salemove.v1+json"
-      }).body
-  end
-
   def request_engagement(site_id, channel_type) do
+    conf = site_id |> get_site_configuration
+
     request_parameters = site_id
       |> find_operator
       |> (fn operator ->
-            request_params(operator["id"], channel_type)
+            request_params(operator["id"], conf.webhook_base_url, channel_type)
           end).()
     # request_parameters
       |> (fn params ->
@@ -74,7 +69,13 @@ defmodule Abix.SaleMove do
                           name: "Demo"
                         }}
           end).()
-      |> send_engagement_request
+      |> (fn params ->
+           post(conf.endpoint <> "/engagement_requests", params,
+            headers: %{
+              "Authorization" => "Token "<> conf.app_token,
+              "Accept" => "application/vnd.salemove.v1+json"
+            }).body
+          end).()
   end
 
   defp build_request(request_response) do
@@ -112,7 +113,9 @@ defmodule Abix.SaleMove do
     engagement = request.request_id
       |> find_engagement_by_request_id
 
-    url = "/engagements/" <> engagement.engagement_id <> "/chat_messages/" <> UUID.uuid4()
+    conf = engagement.site_id |> get_site_configuration
+
+    url = conf.endpoint <> "/engagements/" <> engagement.engagement_id <> "/chat_messages/" <> UUID.uuid4()
     Logger.info url
     Logger.info message
     body =  %{
@@ -163,7 +166,7 @@ defmodule Abix.SaleMove do
       where: u.engagement_request_id == ^request_id,
       order_by: [desc: u.inserted_at],
       limit: 1,
-      select: struct(u, [:engagement_id, :operator_id, :sub_engagement_id, :ended])
+      select: u
     Abix.Repo.all(query) |> Enum.at(0)
   end
 
@@ -184,7 +187,6 @@ defmodule Abix.SaleMove do
   def find_engagement_by_id(id) do
     query = from u in Abix.Engagement,
       where: u.engagement_id == ^id,
-      # select: struct(u, [:engagement_id, :operator_id, :sub_engagement_id, :ended, :engagement_request_id, :site_id])
       select: u
     Abix.Repo.all(query) |> Enum.at(0)
   end
@@ -199,6 +201,13 @@ defmodule Abix.SaleMove do
   def find_request(request_id) do
     Abix.Request
     |> Abix.Repo.get_by(request_id: request_id)
+  end
+
+  def get_site_configuration(site_id) do
+    query = from u in Abix.SiteConfigurations,
+      where: u.site_id == ^site_id,
+      select: u
+    Abix.Repo.all(query) |> Enum.at(0)
   end
 
   def end_engagement(engagement_id) do
