@@ -7,11 +7,15 @@ defmodule Abix.FacebookController do
   plug :find_configuration
 
   def find_configuration(conn, _) do
-    entry = conn.params["entry"]
-      |> Enum.at(0)
-    entry["id"]
-    conf = Abix.Facebook.get_conf(entry["id"])
-    assign(conn, :conf, conf)
+    if conn.params["entry"]!=nil do
+      entry = conn.params["entry"]
+        |> Enum.at(0)
+      entry["id"]
+      conf = Abix.Facebook.get_conf(entry["id"])
+      assign(conn, :conf, conf)
+    else
+      assign(conn, :conf, %{})
+    end
   end
 
   def message_to_operator(conn, params) do
