@@ -4,13 +4,6 @@ defmodule Abix.RequestController do
   require Logger
   require IEx;
 
-  def create_parameters(params) do
-    %{
-      site_id: params["site_id"],
-      sender_id: params["sender_id"]
-    }
-  end
-
   def start_engagement(conn, params) do
     Logger.info "Engagement Start Event Received"
     Abix.SaleMove.engagement_accepted(params["engagement"])
